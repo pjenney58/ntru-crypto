@@ -257,6 +257,8 @@ sha1_blk(
 
     A = B = C = D = E = 0;
     memset(w, 0, sizeof(w));
+    
+    return;
 }
 
 
@@ -342,14 +344,16 @@ ntru_crypto_sha1(
     /* determine space left in unhashed data buffer */
 
     if (c->unhashed_len > 63)
+    {
         SHA_RET(SHA_FAIL)
+    }
 
     space = 64 - c->unhashed_len;
 
     /* process input if it exists */
 
-    if (in_len) {
-
+    if (in_len)
+    {
         /* update count of bits hashed */
 
         {
@@ -358,8 +362,12 @@ ntru_crypto_sha1(
             bits0 = in_len << 3;
             bits1 = in_len >> 29;
             if ((c->num_bits_hashed[0] += bits0) < bits0)
+            {
                 bits1++;
-            if ((c->num_bits_hashed[1] += bits1) < bits1) {
+            }
+            
+            if ((c->num_bits_hashed[1] += bits1) < bits1)
+            {
                 memset((uint8_t *) c, 0, sizeof(NTRU_CRYPTO_SHA1_CTX));
                 space = 0;
                 memset((char *) in_blk, 0, sizeof(in_blk));
@@ -369,7 +377,8 @@ ntru_crypto_sha1(
 
         /* process input bytes */
 
-        if (in_len < space) {
+        if (in_len < space)
+        {
 
             /* input does not fill block buffer:
              * add input to buffer
@@ -378,7 +387,9 @@ ntru_crypto_sha1(
             memcpy(c->unhashed + c->unhashed_len, in, in_len);
             c->unhashed_len += in_len;
 
-        } else {
+        }
+        else
+        {
             uint32_t    blks;
 
             /* input will fill block buffer:
@@ -389,14 +400,18 @@ ntru_crypto_sha1(
 
             in_len -= space;
             for (d = c->unhashed + c->unhashed_len; space; space--)
+            {
                 *d++ = *in++;
+            }
+            
             ntru_crypto_msbyte_2_uint32(in_blk, (uint8_t const *) c->unhashed,
                                         16);
             sha1_blk((uint32_t const *) in_blk, c->state);
 
             /* process any remaining full blocks */
 
-            for (blks = in_len >> 6; blks--; in += 64) {
+            for (blks = in_len >> 6; blks--; in += 64)
+            {
                 ntru_crypto_msbyte_2_uint32(in_blk, in, 16);
                 sha1_blk((uint32_t const *) in_blk, c->state);
             }
@@ -411,12 +426,14 @@ ntru_crypto_sha1(
 
     /* complete message digest if requested */
 
-    if (flags & SHA_FINISH) {
+    if (flags & SHA_FINISH)
+    {
         space = 64 - c->unhashed_len;
 
         /* check padding type */
 
-        if (!(flags & SHA_ZERO_PAD)) {
+        if (!(flags & SHA_ZERO_PAD))
+        {
 
             /* add 0x80 padding byte to the unhashed data buffer
              * (there is always space since the buffer can't be full)
@@ -428,7 +445,8 @@ ntru_crypto_sha1(
 
             /* check for space for bit count */
 
-            if (space < 8) {
+            if (space < 8)
+            {
 
                 /* no space for count:
                  *  fill remainder of unhashed data buffer with zeros,
@@ -443,14 +461,18 @@ ntru_crypto_sha1(
                 sha1_blk((uint32_t const *) in_blk, c->state);
                 memset(c->unhashed, 0, 56);
 
-            } else {
+            }
+            else
+            {
 
                 /* fill unhashed data buffer with zeros,
                  *  leaving space for bit count
                  */
 
                 for (space -= 8; space; space--)
+                {
                     *d++ = 0;
+                }
             }
 
             /* convert partially filled unhashed data buffer to input block and
@@ -462,15 +484,15 @@ ntru_crypto_sha1(
             in_blk[14] = c->num_bits_hashed[1];
             in_blk[15] = c->num_bits_hashed[0];
 
-        } else {
-
+        }
+        else
+        {
             /* pad unhashed data buffer with zeros and no bit count and
              *  convert to input block
              */
 
             memset(c->unhashed + c->unhashed_len, 0, space);
-            ntru_crypto_msbyte_2_uint32(in_blk, (uint8_t const *) c->unhashed,
-                                        16);
+            ntru_crypto_msbyte_2_uint32(in_blk, (uint8_t const *) c->unhashed, 16);
         }
 
         /* process last block */

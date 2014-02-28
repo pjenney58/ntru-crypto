@@ -289,6 +289,8 @@ sha2_blk(
 
     A = B = C = D = E = F = G = H = 0;
     memset(w, 0, sizeof(w));
+    
+    return;
 }
 
 
@@ -343,18 +345,23 @@ ntru_crypto_sha2(
     /* check error conditions */
 
     if (algid != NTRU_CRYPTO_HASH_ALGID_SHA256)
+    {
         SHA_RET(SHA_BAD_PARAMETER)
+    }
 
     if (!c || (in_len && !in) || ((flags & SHA_FINISH) && !md))
+    {
         SHA_RET(SHA_BAD_PARAMETER)
+    }
 
     /* initialize context if requested */
 
-    if (flags & SHA_INIT) {
-
+    if (flags & SHA_INIT)
+    {
         /* init chaining state */
 
-        if (!init) {                            // standard initialization
+        if (!init)   // standard initialization
+        {
 
             c->state[0] = H0_SHA256_INIT;       // standard SHA-256 init
             c->state[1] = H1_SHA256_INIT;
@@ -365,7 +372,9 @@ ntru_crypto_sha2(
             c->state[6] = H6_SHA256_INIT;
             c->state[7] = H7_SHA256_INIT;
 
-        } else {
+        }
+        else
+        {
             c->state[0] = init[0];              // alternate initialization
             c->state[1] = init[1];
             c->state[2] = init[2];
@@ -386,14 +395,16 @@ ntru_crypto_sha2(
     /* determine space left in unhashed data buffer */
 
     if (c->unhashed_len > 63)
+    {
         SHA_RET(SHA_FAIL)
+    }
 
     space = 64 - c->unhashed_len;
 
     /* process input if it exists */
 
-    if (in_len) {
-
+    if (in_len)
+    {
         /* update count of bits hashed */
 
         {
@@ -402,8 +413,12 @@ ntru_crypto_sha2(
             bits0 = in_len << 3;
             bits1 = in_len >> 29;
             if ((c->num_bits_hashed[0] += bits0) < bits0)
+            {
                 bits1++;
-            if ((c->num_bits_hashed[1] += bits1) < bits1) {
+            }
+            
+            if ((c->num_bits_hashed[1] += bits1) < bits1)
+            {
                 memset((uint8_t *) c, 0, sizeof(NTRU_CRYPTO_SHA2_CTX));
                 space = 0;
                 memset((char *) in_blk, 0, sizeof(in_blk));
@@ -413,8 +428,8 @@ ntru_crypto_sha2(
 
         /* process input bytes */
 
-        if (in_len < space) {
-
+        if (in_len < space)
+        {
             /* input does not fill block buffer:
              * add input to buffer
              */
@@ -422,7 +437,9 @@ ntru_crypto_sha2(
             memcpy(c->unhashed + c->unhashed_len, in, in_len);
             c->unhashed_len += in_len;
 
-        } else {
+        }
+        else
+        {
             uint32_t    blks;
 
             /* input will fill block buffer:
@@ -440,7 +457,8 @@ ntru_crypto_sha2(
 
             /* process any remaining full blocks */
 
-            for (blks = in_len >> 6; blks--; in += 64) {
+            for (blks = in_len >> 6; blks--; in += 64)
+            {
                 ntru_crypto_msbyte_2_uint32(in_blk, in, 16);
                 sha2_blk((uint32_t const *) in_blk, c->state);
             }
@@ -455,13 +473,14 @@ ntru_crypto_sha2(
 
     /* complete message digest if requested */
 
-    if (flags & SHA_FINISH) {
+    if (flags & SHA_FINISH)
+    {
         space = 64 - c->unhashed_len;
 
         /* check padding type */
 
-        if (!(flags & SHA_ZERO_PAD)) {
-
+        if (!(flags & SHA_ZERO_PAD))
+        {
             /* add 0x80 padding byte to the unhashed data buffer
              * (there is always space since the buffer can't be full)
              */
@@ -472,7 +491,8 @@ ntru_crypto_sha2(
 
             /* check for space for bit count */
 
-            if (space < 8) {
+            if (space < 8)
+            {
 
                 /* no space for count:
                  *  fill remainder of unhashed data buffer with zeros,
@@ -487,14 +507,18 @@ ntru_crypto_sha2(
                 sha2_blk((uint32_t const *) in_blk, c->state);
                 memset(c->unhashed, 0, 56);
 
-            } else {
+            }
+            else
+            {
 
                 /* fill unhashed data buffer with zeros,
                  *  leaving space for bit count
                  */
 
                 for (space -= 8; space; space--)
+                {
                     *d++ = 0;
+                }
             }
 
             /* convert partially filled unhashed data buffer to input block and
@@ -506,15 +530,16 @@ ntru_crypto_sha2(
             in_blk[14] = c->num_bits_hashed[1];
             in_blk[15] = c->num_bits_hashed[0];
 
-        } else {
+        }
+        else
+        {
 
             /* pad unhashed data buffer with zeros and no bit count and
              *  convert to input block
              */
 
             memset(c->unhashed + c->unhashed_len, 0, space);
-            ntru_crypto_msbyte_2_uint32(in_blk, (uint8_t const *) c->unhashed,
-                                        16);
+            ntru_crypto_msbyte_2_uint32(in_blk, (uint8_t const *) c->unhashed, 16);
         }
 
         /* process last block */

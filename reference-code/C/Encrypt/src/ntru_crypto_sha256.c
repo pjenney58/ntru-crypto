@@ -143,3 +143,4 @@ ntru_crypto_sha256_digest(
                             data_len, SHA_INIT | SHA_FINISH, md);
 }
 
+
